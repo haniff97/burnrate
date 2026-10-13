@@ -158,3 +158,6 @@ class ReviewRequest(Model):
     expected_revision: int = Field(ge=0)
     date: date
     use_ai: bool = False
+
+class RecoveryRequest(Model):
+    code: str = Field(min_length=1,max_length=100)

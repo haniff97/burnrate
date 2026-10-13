@@ -54,7 +54,7 @@ The MVP portion methods are units, edible cooked grams, ml and unknown. Calibrat
 
 ## Identity and hosting
 
-Cookies provide an anonymous browser session, not an account or cross-device identity. Clearing the cookie creates a new journal. Export/import moves data between sessions; authenticated cross-device sync is future work.
+Cookies provide anonymous browser sessions. A recovery code can now link a new browser session to an existing journal without a login screen. Existing journals are preserved by a session-table migration. Export/import copies data; recovery connects to the same journal. See [recovery and backups](../docs/data-protection/README.md) for setup, API behavior, automatic SQLite snapshots and off-server backup instructions.
 
 The default service binds to loopback. For a real deployment, serve the dashboard and API together behind HTTPS, set `BURNRATE_SECURE_COOKIE=true` and `BURNRATE_ORIGIN` to that exact origin, persist the SQLite volume, and provide a trusted access/perimeter policy suitable for health-related journals and paid AI usage. Current origin checks, request-size limits and a per-session, in-process AI quota are MVP protections, not a complete public-hosting abuse control system. No permissive CORS configuration is enabled.
 

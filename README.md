@@ -9,6 +9,7 @@ A mobile-first dashboard for tracking food, movement, weight, and recovery. Burn
 - Add custom activities and manage preferences and partner availability.
 - Generate daily plans with Python rules or optional DeepSeek assistance.
 - Review progress and weekly summaries.
+- Recover the same journal with a saved code and keep automatic SQLite snapshots.
 
 Built with HTML, CSS, JavaScript, Python, FastAPI, and SQLite. The local backend saves journals using anonymous browser sessions, with no login screen.
 
@@ -60,3 +61,7 @@ Without AI keys, manual food logging and template planning still work. Food esti
 The app opens with labeled sample data. Use **Settings → Start fresh** to begin your own journal. The hosted static dashboard uses browser-local storage; server storage and AI features require the Python service.
 
 For more detail, see [backend setup](backend/README.md), [implementation status](IMPLEMENTATION.md), or the [developer guide](DEVELOPER_GUIDE.md).
+
+New to cookies? Read [how BurnRate remembers your journal](docs/browser-sessions/README.md), including phone restarts, LAN/VPN addresses, and backups.
+
+To protect your data, follow [recovery and backups](docs/data-protection/README.md). Create a recovery code in Settings and keep an off-server copy of your backups.

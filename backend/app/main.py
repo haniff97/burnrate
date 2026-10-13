@@ -3,6 +3,9 @@ import json
 import os
 import secrets
 import time
+import asyncio
+import logging
+from contextlib import asynccontextmanager, suppress
 from collections import defaultdict,deque
 from datetime import date,timedelta
 from pathlib import Path
@@ -11,23 +14,45 @@ from dotenv import load_dotenv
 from fastapi import FastAPI,Depends,HTTPException,Request,Response
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from .models import StateWrite,PlanRequest,PhotoRequest,ConfirmDraft,ReviewRequest,Meal,Journal,local_today
+from .models import StateWrite,PlanRequest,PhotoRequest,ConfirmDraft,ReviewRequest,Meal,Journal,local_today,RecoveryRequest
 from .catalog import CATALOG,normalize_state,summary
 from .planner import plan,daily_brief
 from .providers import Providers,PlanChoice,Review,ProviderUnavailable
 from .food import analyze
 from .storage import Store,Conflict
+from .backups import backup_database
 
 COOKIE='burnrate_session'
 ROOT=Path(__file__).resolve().parents[2]
 load_dotenv(ROOT/'backend'/'.env',override=False)
 
 def create_app(db_path=None,providers=None):
-    app=FastAPI(title='BurnRate API',version='1.0.0',docs_url='/api/docs',openapi_url='/api/openapi.json')
     store=Store(db_path or os.getenv('BURNRATE_DB',str(ROOT/'backend'/'burnrate.db')))
+    backup_dir=os.getenv('BURNRATE_BACKUP_DIR',str(Path(store.path).parent/'backups'))
+    backup_interval=max(0.01,float(os.getenv('BURNRATE_BACKUP_INTERVAL_HOURS','6')))*3600
+    backup_status={'last_success':None,'error':None}
+    async def take_backup():
+        try:backup_status.update(await asyncio.to_thread(backup_database,store.path,backup_dir))
+        except Exception:
+            backup_status['error']='Backup failed; check server storage permissions and logs.'
+            logging.getLogger('uvicorn.error').exception('BurnRate database backup failed')
+    async def backup_loop():
+        while True:
+            await asyncio.sleep(backup_interval)
+            await take_backup()
+    @asynccontextmanager
+    async def lifespan(app):
+        await take_backup()
+        task=asyncio.create_task(backup_loop())
+        try:yield
+        finally:
+            task.cancel()
+            with suppress(asyncio.CancelledError):await task
+    app=FastAPI(title='BurnRate API',version='1.0.0',docs_url='/api/docs',openapi_url='/api/openapi.json',lifespan=lifespan)
     providers=providers or Providers()
     app.state.store=store;app.state.providers=providers
     usage=defaultdict(deque)
+    recovery_attempts=defaultdict(deque)
 
     @app.middleware('http')
     async def protect(request,call_next):
@@ -79,6 +104,30 @@ def create_app(db_path=None,providers=None):
         if not uid:
             token=secrets.token_hex(32);uid=store.session(token)
             response.set_cookie(COOKIE,token,httponly=True,secure=os.getenv('BURNRATE_SECURE_COOKIE','false').lower()=='true',samesite='strict',max_age=60*60*24*365,path='/')
+        return {**store.get(uid),'capabilities':providers.capabilities}
+    @app.get('/api/protection')
+    def protection(uid=Depends(user)):
+        return {'recovery_enabled':store.has_recovery(uid),'backup':dict(backup_status),'backup_interval_hours':backup_interval/3600,'backup_retention':120}
+    @app.post('/api/recovery/code')
+    def recovery_code(uid=Depends(user)):
+        code=secrets.token_hex(16).upper()
+        try:store.set_recovery(uid,code)
+        except KeyError:raise HTTPException(409,'Save your journal before creating a recovery code')
+        return {'code':'BR-'+'-'.join(code[i:i+8] for i in range(0,32,8))}
+    @app.post('/api/recovery/restore')
+    def recovery_restore(body:RecoveryRequest,request:Request,response:Response):
+        # Bound guesses without logging or storing plaintext recovery codes.
+        address=request.client.host if request.client else 'unknown'
+        now=time.monotonic();q=recovery_attempts[address]
+        while q and q[0]<now-900:q.popleft()
+        if len(q)>=10:raise HTTPException(429,'Too many recovery attempts; try again in 15 minutes')
+        q.append(now)
+        code=body.code.strip().upper().replace('-','').replace(' ','')
+        if code.startswith('BR'):code=code[2:]
+        if len(code)!=32 or any(c not in '0123456789ABCDEF' for c in code):raise HTTPException(400,'Recovery code is invalid')
+        token=secrets.token_hex(32);uid=store.recover_session(code,token)
+        if not uid:raise HTTPException(400,'Recovery code is invalid')
+        response.set_cookie(COOKIE,token,httponly=True,secure=os.getenv('BURNRATE_SECURE_COOKIE','false').lower()=='true',samesite='strict',max_age=60*60*24*365,path='/')
         return {**store.get(uid),'capabilities':providers.capabilities}
     @app.get('/api/state')
     def get_state(uid=Depends(user)):return store.get(uid)

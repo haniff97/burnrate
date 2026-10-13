@@ -18,12 +18,18 @@ class Store:
             CREATE TABLE IF NOT EXISTS plan_revision(user_id TEXT,input_hash TEXT,json TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(user_id,input_hash));
             CREATE TABLE IF NOT EXISTS draft(user_id TEXT,id TEXT,json TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(user_id,id));
             CREATE TABLE IF NOT EXISTS cache(user_id TEXT,kind TEXT,key TEXT,json TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(user_id,kind,key));
+            CREATE TABLE IF NOT EXISTS recovery(user_id TEXT PRIMARY KEY,code_hash TEXT UNIQUE NOT NULL,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
             ''')
+            # Preserve existing token-hash journal IDs while allowing new devices
+            # to have independent cookie tokens pointing to the same journal.
+            if 'journal_id' not in {r['name'] for r in db.execute('PRAGMA table_info(sessions)')}:
+                db.execute('ALTER TABLE sessions ADD COLUMN journal_id TEXT')
+            db.execute('UPDATE sessions SET journal_id=token_hash WHERE journal_id IS NULL')
     def connect(self):
         db=sqlite3.connect(self.path,timeout=10);db.row_factory=sqlite3.Row;db.execute('PRAGMA foreign_keys=ON');return db
     def session(self,token):
         key=hashlib.sha256(token.encode()).hexdigest()
-        with self.connect() as db:db.execute('INSERT OR IGNORE INTO sessions(token_hash) VALUES(?)',(key,))
+        with self.connect() as db:db.execute('INSERT OR IGNORE INTO sessions(token_hash,journal_id) VALUES(?,?)',(key,key))
         return key
     def get(self,user):
         with self.connect() as db:r=db.execute('SELECT revision,json FROM journal WHERE user_id=?',(user,)).fetchone()
@@ -55,8 +61,22 @@ class Store:
         return json.loads(r['json']) if r else None
     def known_session(self,token):
         key=hashlib.sha256(token.encode()).hexdigest()
-        with self.connect() as db:r=db.execute('SELECT 1 FROM sessions WHERE token_hash=?',(key,)).fetchone()
-        return key if r else None
+        with self.connect() as db:r=db.execute('SELECT journal_id FROM sessions WHERE token_hash=?',(key,)).fetchone()
+        return r['journal_id'] if r else None
+    def has_recovery(self,user):
+        with self.connect() as db:return db.execute('SELECT 1 FROM recovery WHERE user_id=?',(user,)).fetchone() is not None
+    def set_recovery(self,user,code):
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if not db.execute('SELECT 1 FROM journal WHERE user_id=?',(user,)).fetchone():raise KeyError(user)
+            db.execute('INSERT INTO recovery(user_id,code_hash) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET code_hash=excluded.code_hash,created_at=CURRENT_TIMESTAMP',(user,hashlib.sha256(code.encode()).hexdigest()))
+    def recover_session(self,code,token):
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            r=db.execute('SELECT user_id FROM recovery WHERE code_hash=?',(hashlib.sha256(code.encode()).hexdigest(),)).fetchone()
+            if not r:return None
+            db.execute('INSERT INTO sessions(token_hash,journal_id) VALUES(?,?)',(hashlib.sha256(token.encode()).hexdigest(),r['user_id']))
+            return r['user_id']
     def get_draft(self,user,id):
         with self.connect() as db:r=db.execute('SELECT json FROM draft WHERE user_id=? AND id=?',(user,id)).fetchone()
         return json.loads(r['json']) if r else None

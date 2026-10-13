@@ -1,3 +1,5 @@
+import { createId } from './ids.mjs';
+
 // Optional same-origin Python service. The public static site keeps local mode.
 export class ServerJournal {
   connected=false;
@@ -31,14 +33,14 @@ export class ServerJournal {
     let result;
     while(this.pending){
       const state=this.pending;this.pending=null;
-      try{result=await this.request('state',{method:'PUT',body:JSON.stringify({expected_revision:this.revision,mutation_id:crypto.randomUUID(),state})});this.revision=result.revision;}
+      try{result=await this.request('state',{method:'PUT',body:JSON.stringify({expected_revision:this.revision,mutation_id:createId(),state})});this.revision=result.revision;}
       catch(error){this.pending=state;this.blocked=true;throw error;}
     }
     return result;
   }
   async flush(){if(this.blocked)throw new Error('Server saving is paused. Export local edits and reload.');if(this.running)await this.running;}
   async plan(date,useAI=false){await this.flush();return this.request('plans',{method:'POST',body:JSON.stringify({expected_revision:this.revision,date,use_ai:useAI})});}
-  async analyze(dataUrl){await this.flush();return this.request('food/analyze',{method:'POST',body:JSON.stringify({data_url:dataUrl,draft_id:crypto.randomUUID()})});}
-  async confirm(draftId,date,slot,items){await this.flush();const result=await this.request(`food/drafts/${encodeURIComponent(draftId)}/confirm`,{method:'POST',body:JSON.stringify({expected_revision:this.revision,mutation_id:crypto.randomUUID(),date,slot,items})});this.revision=result.revision;return result;}
+  async analyze(dataUrl){await this.flush();return this.request('food/analyze',{method:'POST',body:JSON.stringify({data_url:dataUrl,draft_id:createId()})});}
+  async confirm(draftId,date,slot,items){await this.flush();const result=await this.request(`food/drafts/${encodeURIComponent(draftId)}/confirm`,{method:'POST',body:JSON.stringify({expected_revision:this.revision,mutation_id:createId(),date,slot,items})});this.revision=result.revision;return result;}
   async review(date,useAI=false){await this.flush();return this.request('reviews',{method:'POST',body:JSON.stringify({expected_revision:this.revision,date,use_ai:useAI})});}
 }

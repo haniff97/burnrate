@@ -26,6 +26,20 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000). The backend creates its SQL
 
 On Windows, use `backend\.venv\Scripts\python.exe` instead of `backend/.venv/bin/python`.
 
+## Run on a Linux server with PM2
+
+After creating the virtual environment, installing dependencies, and configuring `backend/.env`, run from the project root:
+
+```sh
+pm2 start ecosystem.config.js
+pm2 save
+pm2 logs burnrate --lines 30
+```
+
+The app listens on port **4007**. The configuration runs one Python process and restarts it if it exits. API keys stay in `backend/.env`. After changing configuration or updating the app, run `pm2 restart burnrate`.
+
+If PM2 is not already configured to start on boot, run `pm2 startup`, follow the command it prints, then run `pm2 save` again.
+
 ## Optional AI setup
 
 Copy `backend/.env.example` to `backend/.env` if it does not already exist, then fill in:

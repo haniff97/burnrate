@@ -1,0 +1,32 @@
+# Python
+.venv/
+backend/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+backend/.pytest_cache/
+backend/burnrate.db
+backend/*.db-*
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+
+# Environment files
+.env
+.env.*
+*.env
+backend/.env
+!*.env.example
+!.env.example
+!**/.env.example
+
+# Markdown files (ignore all .md except readme.md)
+*.md
+!README.md
+!readme.md
+!**/README.md
+!**/readme.md

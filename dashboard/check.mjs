@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {buildPlan,summarizeMeals,weightTrend} from './dist/domain.mjs';
+const base={settings:{calorieFloor:1500,availableMinutes:30,mealTimes:{Lunch:'12:30',Snack:'15:30',Dinner:'19:30'},fasting:false},days:{},meals:[],sessions:[],activities:[{id:'jog',name:'Jogging',icon:'run',type:'cardio',metric:'distance',preference:'most',enabled:true,available:true},{id:'badminton',name:'Badminton',icon:'racket',type:'sport',metric:'duration',preference:'least',enabled:true,available:false,partner:true}]};
+const date='2026-10-12';
+const make=()=>structuredClone(base);
+let s=make(),p=buildPlan(s,date);assert.equal(p.activity.id,'jog');assert.ok(p.kcal>=1500);assert.equal(p.date,'2026-10-13');assert.ok(p.reason.includes('unlogged'));
+s=make();s.days[date]={energy:1};assert.equal(buildPlan(s,date).activity,null);
+s=make();s.days[date]={sleep:5};assert.equal(buildPlan(s,date).rest,true);
+s=make();s.days[date]={soreness:'pain'};assert.equal(buildPlan(s,date).rest,true);
+s=make();s.activities[0].enabled=false;assert.equal(buildPlan(s,date).activity,null);s.activities[1].available=true;assert.equal(buildPlan(s,date).activity.id,'badminton');
+s=make();s.sessions=[{date,activityId:'jog',duration:60,distance:6,effort:5}];p=buildPlan(s,date);assert.equal(p.activity.duration,30);assert.equal(p.activity.detail.includes('3 km'),true);
+s=make();s.settings.calorieFloor=4000;assert.equal(buildPlan(s,date).valid,false);
+s=make();s.settings.fasting=true;s.settings.eatFrom='13:00';s.settings.eatUntil='20:00';assert.equal(buildPlan(s,date).valid,false);
+s=make();s.meals=['Lunch','Snack','Dinner'].map(slot=>({date,slot,items:[{kcal:100}]}));assert.equal(buildPlan(s,date).rest,true);
+s=make();s.sessions=[{date,effort:8}];assert.equal(buildPlan(s,date).rest,true);
+assert.equal(weightTrend([],date).avg,null);assert.equal(weightTrend([{date:'2026-10-01',kg:77},{date,kg:75}],date).avg,75);
+assert.deepEqual(summarizeMeals([{items:[{kcal:200,low:150,high:250,protein:null}]}]),{kcal:200,low:150,high:250,protein:0,estimated:1,unknownProtein:1});
+console.log('Passed 12 planning, uncertainty and missing-data checks.');

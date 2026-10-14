@@ -80,7 +80,8 @@ class Session(Model):
     date: date
     activityId: Identifier
     name: str = Field(min_length=1,max_length=50)
-    duration: float = Field(gt=0,le=600)
+    duration_mode: Literal['minutes','all_day'] = 'minutes'
+    duration: float | None = Field(default=None,gt=0,le=600)
     effort: int = Field(ge=1,le=10)
     distance: Positive | None = None
     steps: int | None = Field(default=None,ge=0,le=200000,strict=True)
@@ -88,6 +89,11 @@ class Session(Model):
     reps: int | None = Field(default=None,ge=0,le=1000)
     hold: float | None = Field(default=None,gt=0,le=3600)
     status: Literal['completed','partial']
+    @model_validator(mode='after')
+    def duration_matches_mode(self):
+        if self.duration_mode=='minutes' and self.duration is None:raise ValueError('Minutes require a duration')
+        if self.duration_mode=='all_day' and self.duration is not None:raise ValueError('All-day entries do not contain timed minutes')
+        return self
 
 class Weight(Model):
     date: date

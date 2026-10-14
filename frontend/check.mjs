@@ -15,4 +15,5 @@ s=make();s.meals=['Lunch','Snack','Dinner'].map(slot=>({date,slot,items:[{kcal:1
 s=make();s.sessions=[{date,effort:8}];assert.equal(buildPlan(s,date).rest,true);
 assert.equal(weightTrend([],date).avg,null);assert.equal(weightTrend([{date:'2026-10-01',kg:77},{date,kg:75}],date).avg,75);
 assert.deepEqual(summarizeMeals([{items:[{kcal:200,low:150,high:250,protein:null}]}]),{kcal:200,low:150,high:250,protein:0,estimated:1,unknownProtein:1});
-console.log('Passed 12 planning, uncertainty and missing-data checks.');
+s=make();s.sessions=[{date,activityId:'jog',duration:null,duration_mode:'all_day',distance:6,effort:3}];p=buildPlan(s,date);assert.equal(p.activity.duration,20);assert.ok(!p.activity.detail.includes('NaN'));
+console.log('Passed 13 planning, uncertainty and missing-data checks.');

@@ -6,7 +6,7 @@ import os
 import re
 from typing import Literal
 import httpx
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, ValidationError
 from .models import Model, Number, Positive, Identifier
 
 log = logging.getLogger(__name__)
@@ -14,9 +14,20 @@ log = logging.getLogger(__name__)
 class ProviderUnavailable(Exception): pass
 class ProviderConfigurationError(ProviderUnavailable): pass
 
+class PlannedFood(Model):
+    food_id: str = Field(min_length=1,max_length=100)
+    amount: float = Field(gt=0,le=2000)
+
+class PlannedMeal(Model):
+    slot: Literal['Lunch','Snack','Dinner']
+    name: str = Field(min_length=1,max_length=80)
+    items: list[PlannedFood] = Field(min_length=1,max_length=5)
+
 class PlanChoice(Model):
     activity_id: str | None
-    portion_multiplier: float = Field(ge=1, le=2)
+    portion_multiplier: float = Field(default=1,ge=1, le=2)
+    meals: list[PlannedMeal] | None = Field(default=None,min_length=3,max_length=3)
+    activity_minutes: float | None = Field(default=None,gt=0,le=600)
     reason: str = Field(min_length=1, max_length=600)
 
 class Portion(Model):
@@ -114,7 +125,11 @@ class Providers:
                     # Error categories only: no provider response, token, photo or user content.
                     log.warning('%s attempt %s failed (%s)',provider,attempt+1,type(exc).__name__)
                     if isinstance(exc,ProviderConfigurationError):raise exc
-                    error=str(exc)[:300] if type(exc) is ValueError else 'Output or constraint validation failed; obey the supplied schema and eligible options.'
+                    if isinstance(exc,ValidationError):
+                        # Give actionable schema feedback without echoing input or responses.
+                        issues=[{'field':'.'.join(map(str,e['loc'])),'type':e['type'],'message':e['msg']} for e in exc.errors(include_input=False,include_context=False,include_url=False)[:3]]
+                        error=('Schema validation failed: '+json.dumps(issues))[:500]
+                    else:error=str(exc)[:300] if type(exc) is ValueError else 'Output or constraint validation failed; obey the supplied schema and eligible options.'
                     if attempt==0:await asyncio.sleep(.1)
             raise ProviderUnavailable(f'{provider} did not return a valid response after two attempts')
         finally:

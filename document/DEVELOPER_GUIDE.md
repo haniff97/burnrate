@@ -393,7 +393,7 @@ The model's output is deliberately small:
 }
 ```
 
-It selects a candidate, a permitted portion multiplier and an explanation. It does not supply authoritative calorie totals or arbitrary new exercises.
+This legacy contract selects a candidate, a permitted portion multiplier and an explanation. The expanded AI contract can also supply three composed meals and an optional shorter activity duration. It never supplies authoritative calorie totals or arbitrary new exercises.
 
 The planner validates the choice by running `plan(data, day, choice)`:
 
@@ -403,7 +403,7 @@ The planner validates the choice by running `plan(data, day, choice)`:
 - The calculated total must reach the configured intake floor.
 - An impossible floor returns a needs-attention result.
 
-The current multiplier applies uniformly to all three fixed meal templates. Individual meal selection, rich food preferences, stage goals and automatic training progression are future work.
+Template mode still applies one multiplier to the three fixed meals. AI mode now optionally composes each meal from catalog foods and shortens eligible activity durations. The legacy choice below remains supported for compatibility; the expanded contract is documented in the dynamic-planning section at the end of this guide. Rich dietary preferences, stage goals and automatic training progression remain future work.
 
 Activity preference and effort are separate. The planner favors preferred eligible activities, while logged effort and recovery can remove training options. A partner activity is eligible only when availability is confirmed. A custom activity follows the same general maintain-only logic.
 
@@ -531,7 +531,7 @@ Automatic SQLite snapshots and recovery-code pairing are now implemented. Before
 
 ## 19. Tests: check properties that matter
 
-The current Python suite has 34 tests, including the journal recovery and snapshot checks in `backend/tests/test_recovery.py`. The JavaScript domain checker covers the existing local planning behavior. Live synthetic provider checks establish connectivity and response-format compatibility; they do not establish meal-estimation accuracy.
+The current Python suite has 52 tests, including the journal recovery and snapshot checks in `backend/tests/test_recovery.py`. The JavaScript domain checker covers the existing local planning behavior. Live synthetic provider checks establish connectivity and response-format compatibility; they do not establish meal-estimation accuracy.
 
 Useful tested properties include:
 
@@ -880,3 +880,31 @@ The `daily_recap` table has a composite `(user_id, day)` primary key. Its transa
 `GET /api/daily-recap` returns only the current session's latest saved recap. This endpoint never creates or replaces a recap. Recovery-linked devices read the same snapshot. Later journal edits do not rewrite it. The browser loads it when opening the journal and polls once per minute while that page is open, including after returning to the tab. Background browser throttling can delay display, while server generation remains independent of the browser. The card labels both the closed day and next-plan date; at midnight, the next-plan date is the new current day.
 
 Recaps are part of SQLite backups and are not included in the existing journal JSON export. Restoring a database snapshot rolls them back. Startup migration creates the new table without changing existing journal rows. The scheduler logs failures; failed generations are not retried during the day. Restarting before the next midnight reschedules the task. Tests cover Malaysia timezone boundaries, frozen idempotent snapshots, identity isolation, missing data, future-log exclusion, read-only endpoints and an accelerated real lifespan scheduler run.
+
+### Timed sessions versus all-day entries
+
+Activity logging now offers `duration_mode: "minutes" | "all_day"`. Minutes require a positive duration up to 600; all-day entries require `duration: null`. Existing sessions without a mode default to minutes, so no database migration is needed. The form places date and duration controls on full-width rows to keep native mobile date inputs from overlapping adjacent controls. Selecting All day disables and hides the minutes input; walking can still include a step count.
+
+Session rows display All day explicitly. Recaps sum only measured minutes and report all-day entries separately. The planners use a previous timed session as the duration reference; an all-day entry does not become 1,440 minutes, a fabricated exercise estimate or a timed-distance scaling reference. Browser import validates the mode/duration relationship. `backend/tests/test_duration.py` verifies round trips, legacy defaults, inconsistent inputs, summaries and planning.
+
+## Shared custom dropdowns
+
+`frontend/dist/dropdowns.mjs` enhances every single-choice native select through a MutationObserver, covering page renders and dynamically rebuilt dialogs. The original select remains in its form with its ID, name, options and selected value. A visible combobox button replaces its presentation. Selecting a menu option updates the underlying selected index and dispatches bubbling input/change events, so existing handlers and FormData continue to work.
+
+Menus use a listbox with selected-option indicators, Arrow Up/Down, Home/End, Enter/Space, Escape, Tab dismissal and typing to match an option prefix. The popup is positioned against the trigger within the visible viewport and flips upward when space below is limited. Where supported, the Popover API keeps it in the top layer above scrolling modal content. Native date and time inputs remain unchanged. Disabled selects and options remain disabled. Required-field validation moves focus to the visible control. This replaces the operating-system select menu without changing the backend data contract.
+
+## Dynamic AI meal composition and trend context
+
+The plan page now exposes the DeepSeek toggle directly. Enable it and press Refresh plan to request an AI plan; connecting a key alone does not enable AI generation. Template mode and the midnight recap continue to use deterministic rules.
+
+`daily_brief()` now includes seven daily food/recovery summaries, fourteen days of actual sessions (including steps and all-day mode), recent confirmed food names, the configured goal/date, the latest logged weight, and current/previous seven-day weight averages. A weekly difference is supplied only when both windows contain at least three measurements. Future actual logs are excluded from the historical windows. The three-measurement rule is a product data-coverage threshold, not a medical test. The model uses trend as descriptive context and is instructed not to infer a deficit from missing meals or claim a cause for weight changes.
+
+The `PlanChoice` response adds optional `meals` and `activity_minutes`. Each meal contains a slot, display name and items with `food_id` and amount. AI composition requires exactly one Lunch, Snack and Dinner, using the five foods in the current illustrative catalog. It can vary combinations and quantities but cannot introduce foods with unknown nutrition. Unit foods must use whole units, duplicate IDs within a meal are rejected, and each food has server-owned per-meal bounds. These bounds are product serving limits, not personalized medical nutrition advice.
+
+`composed_meals()` recomputes calories and protein using catalog basis quantities. The total must meet the user's configured intake floor. Protein remains a reference rather than a hard acceptance constraint; the UI warns when it is not met. Meal times, goals and thresholds cannot be supplied as overrides because the response schema rejects extra fields. The activity ID must remain eligible under recovery, soreness and partner rules, and its optional duration cannot exceed the current familiar-load/time limit. A shorter choice removes the previous timed-distance text rather than inventing a new distance estimate.
+
+The provider gets at most two attempts with schema/constraint repair. Failure returns the rules plan with a visible fallback notice; an impossible rules floor remains a needs-attention result. Before publication, the unchanged transaction-level journal revision check prevents stale AI output from being committed. Plan cache keys now use schema version 2 so old cached outputs are not reused for the new contract.
+
+Successful responses use `meal_source: "ai_composed"` when they include meal composition, retain `source: "ai"`, and expose weight-context coverage to the UI. A legacy model response without meals remains compatible and is labelled Template rather than AI-composed. `backend/tests/test_dynamic_plans.py` verifies calorie recalculation, trend coverage, future exclusions, cache reuse and rejection of unknown foods, invalid quantities, duplicate slots/items, insufficient intake and ineligible or excessive activity. This pipeline adapts within validated constraints; it does not automatically lower calorie targets, escalate training or guarantee the configured deadline.
+
+Provider repair now includes failed field paths and schema error categories without echoing model output. A live synthetic DeepSeek test passed for AI-composed meals after constraint repair. This checks connectivity and contract compliance, not accuracy of the catalog or guaranteed goal attainment.

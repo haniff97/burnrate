@@ -86,3 +86,26 @@
 .recap-next p,.recap-next li{font-size:12px;line-height:1.7}
 .recap-next ul{padding-left:18px;margin:12px 0}
 .midnight-recap .footer-note{margin-top:14px}
+
+/* Date and duration each get a full row, including narrow native date controls. */
+#session-form .session-date input{min-width:0;max-width:100%;box-sizing:border-box}
+#session-form #duration-minutes[hidden]{display:none}
+
+/* Shared select UI across pages and modal forms. */
+.custom-select{display:block;position:relative;min-width:0;width:100%}
+.custom-select-native{position:absolute!important;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;border:0!important;clip-path:inset(50%);overflow:hidden;pointer-events:none}
+.custom-select-trigger{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:46px;padding:12px 14px;border:1px solid #dfe4d8;border-radius:12px;background:#fcfdf9;color:var(--ink);font-size:16px;text-align:left}
+.custom-select-trigger span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.custom-select-trigger::after{content:'';width:8px;height:8px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex-shrink:0;margin:0 3px 4px}
+.custom-select-trigger[aria-expanded="true"]{border-color:#7b847c;box-shadow:0 0 0 3px #b6cba540}
+.custom-select-trigger[aria-invalid="true"]{border-color:#b5553c}
+.custom-select-menu{position:fixed;inset:auto;margin:0;padding:6px;overflow:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:16px;background:#fff;color:var(--ink);box-shadow:0 12px 36px #00000020;z-index:1000}
+.custom-select-menu.popover-fallback{display:block}
+.custom-select-option{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;width:100%;padding:10px 12px;border:0;border-radius:10px;background:transparent;color:var(--ink);font-size:15px;text-align:left;overflow-wrap:anywhere}
+.custom-select-option.highlighted,.custom-select-option:hover{background:var(--sage)}
+.custom-select-option[aria-selected="true"]{font-weight:700}
+.custom-select-option[aria-selected="true"]::after{content:'✓';flex-shrink:0}
+.custom-select-option:disabled{opacity:.4;cursor:not-allowed}
+.card-head>.custom-select{width:auto;min-width:110px}
+
+.plan-meal-header{flex-wrap:wrap}

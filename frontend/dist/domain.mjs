@@ -41,7 +41,7 @@ export function buildPlan(state,date) {
   const options=state.activities.filter(a=>a.enabled&&a.available&&!(d.soreness==='legs'&&a.type!=='strength')&&!(d.soreness==='upper body'&&a.type==='strength'));
   options.sort((a,b)=>({most:0,mid:1,least:2}[a.preference]-{most:0,mid:1,least:2}[b.preference]));
   if(recovery||s.availableMinutes===0||!options.length){base.rest=true;base.reason=pain?'Exercise discomfort is logged. No training is scheduled; review your recovery before choosing a session.':recovery?'Your recent recovery or completed session calls for a lighter day. Keep meals regular and leave training out of tomorrow’s plan.':!options.length?'No activities are available with your current equipment, partner and recovery settings. Tomorrow leaves room for rest.':'You selected a rest day. Tomorrow keeps meals in place and leaves training open.';return base;}
-  const a=options[0],previous=state.sessions.filter(x=>x.activityId===a.id&&x.date<=date).sort((a,b)=>b.date.localeCompare(a.date))[0];
+  const a=options[0],previous=state.sessions.filter(x=>x.activityId===a.id&&x.date<=date&&x.duration>0).sort((a,b)=>b.date.localeCompare(a.date))[0];
   const duration=Math.min(s.availableMinutes,previous?.duration||20);
   const distance=a.metric==='distance'&&previous?.distance?Math.round(previous.distance*Math.min(1,duration/previous.duration)*10)/10:null;
   base.activity={id:a.id,name:a.name,icon:a.icon,duration,detail:`${duration} min · ${distance?`${distance} km · `:''}${previous?'repeat a familiar session':'comfortable, self-selected pace'}${a.partner?' · partner confirmed':''}`};

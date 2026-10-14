@@ -7,7 +7,7 @@ A mobile-first dashboard for tracking food, movement, weight, and recovery. Burn
 - Log meals manually, reuse saved meals, or analyze food photos with Gemini.
 - Track weight, water, sleep, energy, and activities such as jogging, pull-ups, and badminton.
 - Add custom activities and manage preferences and partner availability.
-- Generate daily plans with Python rules or optional DeepSeek assistance.
+- Generate daily plans with Python rules or DeepSeek meal composition using logs, weight trends and recovery.
 - Review progress, weekly summaries, and a midnight recap with next-day focus (Malaysia time).
 - Recover the same journal with a saved code and keep automatic SQLite snapshots.
 
@@ -64,6 +64,8 @@ DEEPSEEK_MODEL=deepseek-flash
 ```
 
 The backend loads `.env` automatically. Restart it after changing configuration. Keep API keys private; `.env` is excluded from Git.
+
+For an AI plan, open **My plan**, enable **Use DeepSeek to compose meals and personalize activity**, then choose **Refresh plan**. AI composes catalog meals using your logs and trend context; Python validates portions, totals and activity limits. The midnight recap remains rules-based.
 
 Without AI keys, manual food logging and template planning still work. Food estimates are approximate and remain editable before confirmation.
 

@@ -20,7 +20,7 @@ No API keys are needed for storage, manual logging, template planning or local w
 
 Provide `GEMINI_API_KEY`, `GEMINI_MODEL`, `DEEPSEEK_API_KEY` and `DEEPSEEK_MODEL` as **server environment variables**. `.env.example` lists settings. `backend/.env` is loaded automatically on startup. Environment variables already provided by your process manager take precedence. Do not put keys in dashboard JavaScript or send them through chat.
 
-Model names are deliberately not pinned: select currently available models from the providers. Settings shows capability readiness. With Gemini configured, attaching a photo reveals an explicit **Analyze with Gemini** action. With DeepSeek configured, Settings lets the user opt into AI on plan refresh. Missing keys or invalid responses preserve manual entry and the validated rules planner.
+Model names are deliberately not pinned: select currently available models from the providers. Settings shows capability readiness. With Gemini configured, attaching a photo reveals an explicit **Analyze with Gemini** action. With DeepSeek configured, My plan and Settings let the user opt into AI on plan refresh. My plan → enable Use DeepSeek → Refresh plan requests composed catalog meals and a constrained activity choice; the toggle is currently held in memory for that page session. Missing keys or invalid responses preserve manual entry and the validated rules planner.
 
 Provider requests follow [Google's structured-output documentation](https://ai.google.dev/gemini-api/docs/structured-output) and [DeepSeek's JSON-output documentation](https://api-docs.deepseek.com/guides/json_mode/). Live synthetic connection tests have now passed for DeepSeek JSON output, Gemini image-recognition output, and Gemini nutrition JSON. These check connectivity and formatting, not calorie accuracy. Gemini uses JSON response mode with the full contract in the prompt and strict Pydantic validation afterward; the selected model rejected the nested API-native schema. Validation failures still receive at most one repair attempt.
 
@@ -45,7 +45,7 @@ Writes require `expected_revision` and `mutation_id`. A conflicting revision ret
 
 Journal JSON uses the dashboard's existing schema, validated by `app/models.py`. Server normalization replaces catalog-based calories and protein with Python calculations; client plan output is discarded. User calorie overrides keep `food: null` and remain explicit estimates. The version-1 catalog uses approximate averages rather than a verified nutrition dataset.
 
-Planning requests use the date of the daily brief; output is for the following day. Python supplies eligible activities and portion bounds, validates model choices and recalculates nutrition. At most two provider attempts occur per stage. Weekly end-date changes are proposals only; there is no automatic goal modification or proposal-acceptance endpoint yet.
+Planning requests use the date of the daily brief; output is for the following day. Python supplies eligible activities, serving bounds, recent logs and weight-trend context. DeepSeek can compose three catalog meals and shorten an eligible session; Python validates all items and recalculates nutrition. The current catalog contains five illustrative foods, and template mode remains available. At most two provider attempts occur per stage. Weekly end-date changes are proposals only; there is no automatic goal modification or proposal-acceptance endpoint yet.
 
 ## Photo handling
 

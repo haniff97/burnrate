@@ -11,7 +11,6 @@ backend/backups/
 
 # Node
 frontend/node_modules/
-frontend/dist/
 
 # OS
 .DS_Store
@@ -31,3 +30,6 @@ backend/.env
 !readme.md
 !**/README.md
 !**/readme.md
+
+# Project documentation belongs in source control.
+!document/**/*.md

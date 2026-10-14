@@ -8,10 +8,21 @@ A mobile-first dashboard for tracking food, movement, weight, and recovery. Burn
 - Track weight, water, sleep, energy, and activities such as jogging, pull-ups, and badminton.
 - Add custom activities and manage preferences and partner availability.
 - Generate daily plans with Python rules or optional DeepSeek assistance.
-- Review progress and weekly summaries.
+- Review progress, weekly summaries, and a midnight recap with next-day focus (Malaysia time).
 - Recover the same journal with a saved code and keep automatic SQLite snapshots.
 
 Built with HTML, CSS, JavaScript, Python, FastAPI, and SQLite. The local backend saves journals using anonymous browser sessions, with no login screen.
+
+## Project folders
+
+| Folder | Contents |
+| --- | --- |
+| `backend/` | Python API, SQLite storage, tests, environment configuration and PM2 configuration |
+| `frontend/` | HTML, CSS, JavaScript, frontend checks and Sites hosting metadata |
+| `mock/` | Saved UI screenshots and historical deployment archives |
+| `document/` | Developer guide, specifications, implementation notes and recovery instructions |
+
+The files in `frontend/dist/` are maintained source files; no frontend build step is required.
 
 ## Run locally
 
@@ -32,7 +43,7 @@ On Windows, use `backend\.venv\Scripts\python.exe` instead of `backend/.venv/bin
 After creating the virtual environment, installing dependencies, and configuring `backend/.env`, run from the project root:
 
 ```sh
-pm2 start ecosystem.config.js
+pm2 start backend/ecosystem.config.js
 pm2 save
 pm2 logs burnrate --lines 30
 ```
@@ -60,8 +71,8 @@ Without AI keys, manual food logging and template planning still work. Food esti
 
 The app opens with labeled sample data. Use **Settings → Start fresh** to begin your own journal. The hosted static dashboard uses browser-local storage; server storage and AI features require the Python service.
 
-For more detail, see [backend setup](backend/README.md), [implementation status](IMPLEMENTATION.md), or the [developer guide](DEVELOPER_GUIDE.md).
+For more detail, see [backend setup](backend/README.md), [implementation status](document/IMPLEMENTATION.md), or the [developer guide](document/DEVELOPER_GUIDE.md).
 
-New to cookies? Read [how BurnRate remembers your journal](docs/browser-sessions/README.md), including phone restarts, LAN/VPN addresses, and backups.
+New to cookies? Read [how BurnRate remembers your journal](document/browser-sessions/README.md), including phone restarts, LAN/VPN addresses, and backups.
 
-To protect your data, follow [recovery and backups](docs/data-protection/README.md). Create a recovery code in Settings and keep an off-server copy of your backups.
+To protect your data, follow [recovery and backups](document/data-protection/README.md). Create a recovery code in Settings and keep an off-server copy of your backups.

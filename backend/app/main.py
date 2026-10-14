@@ -21,6 +21,7 @@ from .providers import Providers,PlanChoice,Review,ProviderUnavailable
 from .food import analyze
 from .storage import Store,Conflict
 from .backups import backup_database
+from .recaps import now_local, seconds_until_midnight
 
 COOKIE='burnrate_session'
 ROOT=Path(__file__).resolve().parents[2]
@@ -40,14 +41,25 @@ def create_app(db_path=None,providers=None):
         while True:
             await asyncio.sleep(backup_interval)
             await take_backup()
+    async def freeze_day(delayed=False):
+        now=now_local();day=(now.date()-timedelta(days=1)).isoformat()
+        try:await asyncio.to_thread(store.freeze_recaps,day,now.isoformat(),delayed)
+        except Exception:logging.getLogger('uvicorn.error').exception('BurnRate midnight recap failed')
+    async def recap_loop():
+        while True:
+            await asyncio.sleep(seconds_until_midnight(now_local()))
+            await freeze_day()
     @asynccontextmanager
     async def lifespan(app):
         await take_backup()
         task=asyncio.create_task(backup_loop())
+        recap_task=asyncio.create_task(recap_loop())
         try:yield
         finally:
             task.cancel()
+            recap_task.cancel()
             with suppress(asyncio.CancelledError):await task
+            with suppress(asyncio.CancelledError):await recap_task
     app=FastAPI(title='BurnRate API',version='1.0.0',docs_url='/api/docs',openapi_url='/api/openapi.json',lifespan=lifespan)
     providers=providers or Providers()
     app.state.store=store;app.state.providers=providers
@@ -108,6 +120,9 @@ def create_app(db_path=None,providers=None):
     @app.get('/api/protection')
     def protection(uid=Depends(user)):
         return {'recovery_enabled':store.has_recovery(uid),'backup':dict(backup_status),'backup_interval_hours':backup_interval/3600,'backup_retention':120}
+    @app.get('/api/daily-recap')
+    def daily_recap(uid=Depends(user)):
+        return {'recap':store.latest_recap(uid),'timezone':'Asia/Kuala_Lumpur','schedule':'00:00'}
     @app.post('/api/recovery/code')
     def recovery_code(uid=Depends(user)):
         code=secrets.token_hex(16).upper()
@@ -205,7 +220,7 @@ def create_app(db_path=None,providers=None):
         snapshot(uid,body.expected_revision)
         store.cache(uid,'review',f'{body.expected_revision}:{end}:{body.use_ai}',result)
         return result
-    app.mount('/',StaticFiles(directory=ROOT/'dashboard'/'dist',html=True),name='dashboard')
+    app.mount('/',StaticFiles(directory=ROOT/'frontend'/'dist',html=True),name='dashboard')
     return app
 
 app=create_app()

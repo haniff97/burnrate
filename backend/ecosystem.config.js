@@ -1,10 +1,12 @@
 const path = require('path');
 
+const projectRoot = path.resolve(__dirname, '..');
+
 module.exports = {
   apps: [{
     name: 'burnrate',
-    cwd: __dirname,
-    script: path.join(__dirname, 'backend', '.venv', 'bin', 'python'),
+    cwd: projectRoot,
+    script: path.join(projectRoot, 'backend', '.venv', 'bin', 'python'),
     interpreter: 'none',
     args: ['-m', 'uvicorn', 'app.main:app', '--app-dir', 'backend', '--host', '0.0.0.0', '--port', '4007'],
     exec_mode: 'fork',

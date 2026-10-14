@@ -83,6 +83,7 @@ class Session(Model):
     duration: float = Field(gt=0,le=600)
     effort: int = Field(ge=1,le=10)
     distance: Positive | None = None
+    steps: int | None = Field(default=None,ge=0,le=200000,strict=True)
     sets: int | None = Field(default=None,ge=1,le=100)
     reps: int | None = Field(default=None,ge=0,le=1000)
     hold: float | None = Field(default=None,gt=0,le=3600)

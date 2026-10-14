@@ -16,7 +16,7 @@ Creating a replacement invalidates the previous recovery code. It does not disco
 
 ## Recover after losing cookies, or connect another device
 
-Open your Python backend address and choose **Settings → Recover journal**. Enter the saved code. BurnRate requests a JSON export of the current browser journal before switching; check that the browser saved that download if you need it.
+Open your Python backend address and choose **Settings → Recover journal**. Choose **Upload recovery code** and select the downloaded `.txt` file, or enter the saved code manually. The browser reads the file locally, validates that it contains one code, and fills the code field. Press **Recover journal** to submit only that code to the backend. Files larger than 16 KB or containing multiple different codes are rejected. BurnRate requests a JSON export of the current browser journal before switching; check that the browser saved that download if you need it.
 
 The backend creates a new cookie token linked to the recovered journal. The current browser's former server journal remains separate. Recovery does not merge journals.
 

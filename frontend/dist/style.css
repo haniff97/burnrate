@@ -30,3 +30,59 @@
 .nourishment-card .nutrition{padding:0 0 18px;align-items:center}.nourishment-card .nutrition-side{min-width:0}.nourishment-card .stat-row{gap:8px;align-items:center}.nourishment-card .stat-row strong{white-space:nowrap}.nourishment-card .meal-status{margin-bottom:20px;padding:13px 15px;font-size:12px;line-height:1.6;align-items:flex-start}.nourishment-card .meal-status .icon{width:17px;height:17px;margin-top:2px}.nourishment-card .ring-label{font-size:11px;text-align:center;max-width:110px;line-height:1.4}.nourishment-card .mini-stats{padding-top:18px}.nourishment-card .mini-stat{min-width:0}.nourishment-card .mini-stat strong{white-space:nowrap}.nourishment-card .mini-stat .label{font-size:10px;gap:5px}.nourishment-card .mini-stat strong small{display:inline-block}
 @media(max-width:650px){.nourishment-card .card-head{gap:8px;margin-bottom:20px;align-items:flex-start}.nourishment-card .card-head h2{font-size:17px;line-height:1.25}.nourishment-card .card-head .badge{font-size:9px;white-space:nowrap;flex-shrink:0}.nourishment-card .nutrition{gap:18px}.nourishment-card .ring-wrap{width:144px;height:144px}.nourishment-card .ring-center .number{font-size:29px}.nourishment-card .stat-row{font-size:11px}.nourishment-card .stat-row strong{font-size:12px}.nourishment-card .protein{margin-bottom:22px}.nourishment-card .meal-status{font-size:11px;margin-bottom:18px}.nourishment-card .mini-stat .label{font-size:9px;gap:4px}.nourishment-card .mini-stat strong{font-size:17px}.nourishment-card .mini-stats{grid-template-columns:1.15fr 1fr 1fr;gap:8px}}
 @media(max-width:370px){.nourishment-card .card-head{flex-wrap:wrap;gap:7px}.nourishment-card .nutrition{gap:12px}.nourishment-card .ring-wrap{width:122px;height:122px}.nourishment-card .ring-label{font-size:10px}.nourishment-card .ring-center .number{font-size:27px}.nourishment-card .stat-row{flex-direction:column;align-items:flex-start;gap:5px}.nourishment-card .protein{margin-bottom:17px}.nourishment-card .mini-stat strong{font-size:16px}.nourishment-card .mini-stat strong small{font-size:9px}.nourishment-card .mini-stat .label{font-size:8px}}
+
+/* Water logging: one shortcut on home, simple amounts in the sheet. */
+.glance-stats .water-shortcut{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:44px;width:100%}
+.glance-stats .water-shortcut strong{display:flex;align-items:baseline;gap:4px}
+.glance-stats .water-shortcut strong .icon{width:14px;height:14px;align-self:center;color:var(--muted)}
+.water-summary{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.water-summary strong{font-size:30px;letter-spacing:-1px}
+.water-summary strong small{font-size:13px;font-weight:400;letter-spacing:0;color:var(--muted)}
+.water-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.water-presets button{flex-direction:column;padding:16px 8px;gap:6px;min-height:100px}
+.water-presets strong{font-size:20px}
+.water-presets small{font-size:12px;color:var(--muted)}
+.water-custom{margin-top:20px}
+.water-custom summary{cursor:pointer;min-height:44px;padding:12px 0;font-size:13px}
+.water-custom form{margin-top:10px}
+
+/* Keep water information below the food summary, with a full-width tap target. */
+.home-layout .glance-stats{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:8px}
+.home-layout .glance-stats>div:nth-child(2){border-right:0}
+.home-layout .glance-stats>.glance-water{grid-column:1/-1;border-right:0;border-top:1px solid var(--line);padding-top:6px}
+.home-layout .glance-water .water-shortcut{flex-direction:row;align-items:center;justify-content:space-between;gap:12px}
+.home-layout .glance-water .water-shortcut>span{margin-bottom:0;font-size:12px}
+
+.journal-plan-top{margin-bottom:22px}
+
+.meal-actions{display:flex;align-items:center;gap:14px;flex-shrink:0}
+.meal-actions .text-btn{min-height:44px;white-space:nowrap;padding:8px 4px}
+@media(max-width:650px){.meal-row:has(.meal-actions){flex-wrap:wrap}.meal-actions{width:100%;justify-content:flex-end;gap:20px}.meal-actions .text-btn{font-size:12px}}
+
+/* Desktop cards keep their content height instead of shrinking into pills. */
+@media(min-width:851px){
+  .home-layout .main{height:auto;min-height:100dvh}
+  .home-layout .action-grid{flex:0 0 auto;grid-template-rows:repeat(2,minmax(150px,auto));min-height:309px}
+  .home-layout .action-tile{min-height:150px;justify-content:flex-start;padding:20px}
+  .home-layout .action-tile>*{flex-shrink:0}
+}
+@media(min-width:1100px){
+  .home-layout #view{max-width:1100px}
+  .home-layout .action-grid{max-width:1100px;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:minmax(150px,auto);min-height:150px}
+  .home-layout .home-intro h1,.home-layout .day-glance,.home-layout .home-search-wrap{max-width:1100px}
+}
+@media(min-width:1100px) and (max-height:800px){
+  .home-layout .main{padding-top:14px;padding-bottom:90px}
+  .home-layout .home-intro{margin-top:12px;margin-bottom:12px}
+}
+
+.midnight-recap{margin-bottom:22px}
+.midnight-recap .card-head{flex-wrap:wrap;margin-bottom:12px}
+.recap-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:20px 0}
+.recap-metrics span{display:block;color:var(--muted);font-size:11px;margin-bottom:6px}
+.recap-metrics strong{font-size:15px}
+.recap-next{margin-top:18px;padding:18px;background:var(--sage);border-radius:18px}
+.recap-next h3{font-size:15px;margin-bottom:10px}
+.recap-next p,.recap-next li{font-size:12px;line-height:1.7}
+.recap-next ul{padding-left:18px;margin:12px 0}
+.midnight-recap .footer-note{margin-top:14px}

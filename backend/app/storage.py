@@ -19,6 +19,7 @@ class Store:
             CREATE TABLE IF NOT EXISTS draft(user_id TEXT,id TEXT,json TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(user_id,id));
             CREATE TABLE IF NOT EXISTS cache(user_id TEXT,kind TEXT,key TEXT,json TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(user_id,kind,key));
             CREATE TABLE IF NOT EXISTS recovery(user_id TEXT PRIMARY KEY,code_hash TEXT UNIQUE NOT NULL,created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+            CREATE TABLE IF NOT EXISTS daily_recap(user_id TEXT,day TEXT,json TEXT NOT NULL,PRIMARY KEY(user_id,day));
             ''')
             # Preserve existing token-hash journal IDs while allowing new devices
             # to have independent cookie tokens pointing to the same journal.
@@ -65,6 +66,18 @@ class Store:
         return r['journal_id'] if r else None
     def has_recovery(self,user):
         with self.connect() as db:return db.execute('SELECT 1 FROM recovery WHERE user_id=?',(user,)).fetchone() is not None
+    def freeze_recaps(self,day,generated_at,delayed=False):
+        from .recaps import build_recap
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            rows=db.execute('SELECT user_id,revision,json FROM journal WHERE NOT EXISTS (SELECT 1 FROM daily_recap WHERE daily_recap.user_id=journal.user_id AND day=?)',(day,)).fetchall()
+            for row in rows:
+                recap=build_recap(json.loads(row['json']),day,row['revision'],generated_at,delayed)
+                db.execute('INSERT OR IGNORE INTO daily_recap VALUES(?,?,?)',(row['user_id'],day,json.dumps(recap,allow_nan=False)))
+            return len(rows)
+    def latest_recap(self,user):
+        with self.connect() as db:row=db.execute('SELECT json FROM daily_recap WHERE user_id=? ORDER BY day DESC LIMIT 1',(user,)).fetchone()
+        return json.loads(row['json']) if row else None
     def set_recovery(self,user,code):
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')

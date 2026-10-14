@@ -137,7 +137,7 @@ To explore the implementation, read:
 
 - `backend/app/main.py`: `/api/session`, cookie attributes, and the `user` dependency.
 - `backend/app/storage.py`: `session`, `known_session`, `get`, and `save`.
-- `dashboard/dist/server.js`: session initialization and queued writes.
-- `dashboard/dist/app.js`: local storage, export, import, and startup hydration.
+- `frontend/dist/server.js`: session initialization and queued writes.
+- `frontend/dist/app.js`: local storage, export, import, and startup hydration.
 
 In browser developer tools, inspect Application/Storage → Cookies and Local Storage, then Network → `/api/session`. Inspect values privately: avoid sharing the real cookie token in screenshots or logs.

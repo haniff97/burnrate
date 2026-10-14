@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {parseRecoveryFile} from './dist/recovery.mjs';
+const code='BR-01234567-89ABCDEF-01234567-89ABCDEF';
+const file=`BurnRate recovery code\n\n${code}\n\nKeep this private. Anyone with this code can access your journal.\nUse Settings > Recover journal on your BurnRate server.\n`;
+assert.equal(parseRecoveryFile(file),code);
+assert.equal(parseRecoveryFile(file.replaceAll('\n','\r\n').toLowerCase()),code);
+assert.equal(parseRecoveryFile('\uFEFF'+code),code);
+assert.equal(parseRecoveryFile('0123456789abcdef0123456789abcdef'),code);
+assert.throws(()=>parseRecoveryFile('Not a recovery file'),/No recovery code/);
+assert.throws(()=>parseRecoveryFile(file+'BR-FFFFFFFF-FFFFFFFF-FFFFFFFF-FFFFFFFF'),/multiple/);
+assert.throws(()=>parseRecoveryFile('x'.repeat(16385)),/16 KB/);
+assert.throws(()=>parseRecoveryFile('<script>'+code+'</script>'),/No recovery code/);
+console.log('Passed recovery file format, size and ambiguity checks.');
